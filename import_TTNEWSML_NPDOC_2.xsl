@@ -12,9 +12,10 @@
 	2015-10-02 JL gjorde en xslt 2.0 version
 	2015-10-05 JL justeringar för att fungera själv utan efterbearbetning
 	       Komplettering för att klara contentMetaExtPropertys båda varianter. JL 2015-11-04
+	2016-05-26 JL Lade till sortkey för bilder
 	-->
 
-	<xsl:variable name="currentDateTime" select="current-dateTime()"/>  <!-- XSLT 1.0 kan inte ta fram datum och tid så det här måste fixas sedan av processen -->
+	<xsl:variable name="currentDateTime" select="current-dateTime()"/>  <!-- XSLT 2.0 kan plocka current-DateTime själv. -->
 
 	<xsl:variable name="npdoc_ns">http://www.infomaker.se/npdoc/2.1</xsl:variable> <!-- NP vill ha namespace på alla element. -->
 	<xsl:variable name="npex_ns">http://www.infomaker.se/npexchange/3.5</xsl:variable> <!-- NP vill ha namespace på alla element. -->
@@ -58,7 +59,7 @@
 								<address><xsl:value-of select="$geonamn"/></address>
 								<description/>
 								<Point>
-									<coordinates><xsl:value-of select="$latitud"/>,<xsl:value-of select="$longitud"/></coordinates>
+									<coordinates><xsl:value-of select="$longitud"/>,<xsl:value-of select="$latitud"/></coordinates>
 								</Point>
 							</Placemark>
 							
@@ -279,6 +280,9 @@
 										<xsl:variable name="bildref"><xsl:value-of select="img/@data-assoc-ref"/></xsl:variable>
 										<imagecontainer refType="ImageContainer">
 											<name><xsl:value-of select="concat('Bild ',$plats)"/></name>
+											<sortkey>
+												<xsl:value-of select="position() * 0.25"/>
+											</sortkey>
 											<data> 
 												<npdoc xmlns="http://www.infomaker.se/npdoc/2.1" version="2.1" xml:lang="sv">
 													<caption>

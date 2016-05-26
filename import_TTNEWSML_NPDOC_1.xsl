@@ -11,6 +11,7 @@
 	2015-10-05 JL justeringar för att fungera själv.
 	2015-11-02 JL förklarade currentDateTime
 	       Komplettering för att klara contentMetaExtPropertys båda varianter. JL 2015-11-04
+	2016-05-26 JL Lade till sortkey för bilder
 	-->
 
 
@@ -64,7 +65,7 @@
 					<address><xsl:value-of select="$geonamn"/></address>
 					<description/>
 					<Point>
-						<coordinates><xsl:value-of select="$latitud"/>,<xsl:value-of select="$longitud"/></coordinates>
+						<coordinates><xsl:value-of select="$longitud"/>,<xsl:value-of select="$latitud"/></coordinates>
 					</Point>
 				</Placemark>
 				
@@ -283,6 +284,9 @@
 										<xsl:variable name="bildref"><xsl:value-of select="img/@data-assoc-ref"/></xsl:variable>
 										<imagecontainer refType="ImageContainer">
 											<name><xsl:value-of select="concat('Bild ',$plats)"/></name>
+											<sortkey>
+												<xsl:value-of select="position() * 0.25"/>
+											</sortkey>
 											<data> 
 												<npdoc xmlns="http://www.infomaker.se/npdoc/2.1" version="2.1" xml:lang="sv">
 													<caption>
