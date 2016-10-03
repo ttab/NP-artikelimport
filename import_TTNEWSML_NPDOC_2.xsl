@@ -11,6 +11,7 @@
 	2015-09-01 JL lade till hantering av tags och geotaggar.
 	2015-10-02 JL gjorde en xslt 2.0 version
 	2015-10-05 JL justeringar för att fungera själv utan efterbearbetning
+	2015-11-02 JL förklarade currentDateTime
 	       Komplettering för att klara contentMetaExtPropertys båda varianter. JL 2015-11-04
 	2016-05-26 JL Lade till sortkey för bilder
 	-->
@@ -28,9 +29,10 @@
 	<xsl:template match="/">
 		
 		<xsl:variable name="mainuri" select="newsMessage/itemSet/packageItem/groupSet/group[@role = 'group:main']/itemRef/@residref"/> <!-- Börja med att hämta den id-referens som pekar ut main newsitem i paketet. NewsML-filen har en package item även om det bara är en ensam text. -->
+
+		<xsl:variable name="mainslugg" select="substring-before(substring-after(substring-after($mainuri,'/'),'-'),'-')"/>
 		<xsl:variable name="renuri" select="substring-after($mainuri,'text/')"/>
 		
-		<xsl:variable name="mainslugg" select="substring-before(substring-after(substring-after($mainuri,'/'),'-'),'-')"/>
 		
 		<xsl:variable name="produktkoder"> <!-- Ta in produkt-kod(erna) för användning i uppsättning av tkod och sektion -->
 			<xsl:text>:</xsl:text>
@@ -286,7 +288,7 @@
 											<data> 
 												<npdoc xmlns="http://www.infomaker.se/npdoc/2.1" version="2.1" xml:lang="sv">
 													<caption>
-														<p><xsl:value-of select="./figure/figcaption"/></p>
+														<p><xsl:value-of select="./figcaption"/></p>
 													</caption>
 												</npdoc>
 											</data>
@@ -312,7 +314,7 @@
 												</byline>
 												
 											</xsl:if>
-											<xsl:variable name="bildnr" select="format-number(xs:integer(substring-after($bildref,'a'))+1,'00')"/> <!-- Bilden refereras med ett nummer som ser ut som a000, men motsvarande bildfil innehåller numret 01. -->
+											<xsl:variable name="bildnr" select="$bildref"/> <!-- Från 3/10 ska bildnumret som finns här vara med intakt i bildnamnet -->
 											<xsl:variable name="bildnamnet" select="concat($renuri,'-',$bildnr,'nh.jpg')"/> <!-- Sätt ihop en referens till vad bildfilen heter -->
 											<image refType="Image">
 												<name><xsl:value-of select="$bildnamnet"/></name>
@@ -396,7 +398,6 @@
 		<xsl:element name="leadin" namespace="{$npdoc_ns}"><xsl:apply-templates mode="ingress"/></xsl:element>  <!-- Skapa ingressstart som är leadin och bearbeta allt däri -->
 	</xsl:template>
 	
-	
 	<xsl:template match="p" mode="ingress">
 		<xsl:element name="p" namespace="{$npdoc_ns}"><xsl:value-of select="normalize-space(.)"/></xsl:element>
 	</xsl:template>
@@ -405,15 +406,20 @@
 		<xsl:element name="p" namespace="{$npdoc_ns}"><xsl:text>&#x2013; </xsl:text><xsl:value-of select="normalize-space(.)"/></xsl:element>
 	</xsl:template>
 	
+
+	<xsl:template match="div[@class = 'bodytext']"><xsl:apply-templates/></xsl:template>
+	
 	<xsl:template match="p">
 		<xsl:element name="p" namespace="{$npdoc_ns}"><xsl:value-of select="normalize-space(.)"/></xsl:element>
+	</xsl:template>
+	
+	<xsl:template match="h5">
+		<xsl:element name="subheadline4" namespace="{$npdoc_ns}"><xsl:attribute name="customname"><xsl:text>Fråga</xsl:text></xsl:attribute><xsl:value-of select="normalize-space(.)"/></xsl:element>
 	</xsl:template>
 	
 	<xsl:template match="blockquote">
 		<xsl:element name="subheadline2" namespace="{$npdoc_ns}"><xsl:attribute name="customname"><xsl:text>Citat</xsl:text></xsl:attribute><xsl:text>&#x2013; </xsl:text><xsl:value-of select="normalize-space(.)"/></xsl:element>
 	</xsl:template>
-	
-	<xsl:template match="div[@class = 'bodytext']"><xsl:apply-templates/></xsl:template>
 	
 	<xsl:template match="div[@class = 'byline']">
 		<xsl:element name="p" namespace="{$npdoc_ns}"><xsl:value-of select="normalize-space(.)"/></xsl:element>
@@ -439,6 +445,9 @@
 		<xsl:for-each select="li"><xsl:element name="subheadline5" namespace="{$npdoc_ns}"><xsl:attribute name="customName">Lista</xsl:attribute><xsl:value-of select="."/></xsl:element></xsl:for-each>
 	</xsl:template>
 	
+	<xsl:template match="footer[@class = 'broadcastinfo']"><xsl:element name="pagedatline" namespace="{$npdoc_ns}"><xsl:attribute name="customName">Kanal Dag Tid</xsl:attribute></xsl:element><xsl:apply-templates/></xsl:template>
+	
+
 	<xsl:template name="tvattaAAO">
 		<xsl:param name="intext"/>
 		
