@@ -12,6 +12,8 @@
 	2015-11-02 JL förklarade currentDateTime
 	       Komplettering för att klara contentMetaExtPropertys båda varianter. JL 2015-11-04
 	2016-05-26 JL Lade till sortkey för bilder
+	2016-11-24 JL lade till bildhantering i aside
+	2016-11-25 JL kompletterade med sportresultathantering
 	-->
 
 
@@ -240,13 +242,22 @@
                                                         <xsl:if test="h1">
                                                         	<xsl:element name="headline" namespace="{$npdoc_ns}"><xsl:element name="p" namespace="{$npdoc_ns}"><xsl:value-of select="normalize-space(h1)"/></xsl:element></xsl:element>
                                                         </xsl:if>
-								<xsl:if test="$artikeldelstyp = 'Artikel'">
-									<xsl:element name="pagedateline" namespace="{$npdoc_ns}"><xsl:element name="p" namespace="{$npdoc_ns}"><xsl:value-of select="normalize-space(div[@class = 'dat']/span[@class = 'vignette'])"/></xsl:element></xsl:element>
-									<xsl:element name="dateline" namespace="{$npdoc_ns}"><xsl:element name="p" namespace="{$npdoc_ns}"><xsl:value-of select="normalize-space(div[@class = 'dat']/span[@class = 'source'])"/></xsl:element></xsl:element>
-								</xsl:if>
+								<xsl:choose>
+									<xsl:when test="./@class = 'sport'">
+										<xsl:element name="pagedateline" namespace="{$npdoc_ns}"><xsl:element name="p" namespace="{$npdoc_ns}"><xsl:value-of select="normalize-space(h1[@class = 'sport-location'])"/></xsl:element></xsl:element>
+										<xsl:element name="dateline" namespace="{$npdoc_ns}"><xsl:element name="p" namespace="{$npdoc_ns}"><xsl:value-of select="normalize-space(h1[@class = 'sport-what'])"/></xsl:element></xsl:element>
+									</xsl:when>
+									<xsl:when test="$artikeldelstyp = 'Artikel'">
+										<xsl:element name="pagedateline" namespace="{$npdoc_ns}"><xsl:element name="p" namespace="{$npdoc_ns}"><xsl:value-of select="normalize-space(div[@class = 'dat']/span[@class = 'vignette'])"/></xsl:element></xsl:element>
+										<xsl:element name="dateline" namespace="{$npdoc_ns}"><xsl:element name="p" namespace="{$npdoc_ns}"><xsl:value-of select="normalize-space(div[@class = 'dat']/span[@class = 'source'])"/></xsl:element></xsl:element>
+									</xsl:when>
+								</xsl:choose>
 									<xsl:apply-templates select="h4"/>   <!-- h4 är ingressen -->
 									<xsl:element name="body" namespace="{$npdoc_ns}">
 										<xsl:apply-templates select="div[@class = 'bodytext']"/>
+										<xsl:apply-templates select="div[@class = 'result-epa']"/>
+										<xsl:apply-templates select="div[@class = 'result']"/>
+										<xsl:apply-templates select="div[@class = 'result-tab']"/>
 									</xsl:element>
 									
 								</npdoc>
@@ -382,6 +393,56 @@
 								</byline>
 								
 							</xsl:if>
+							<xsl:if test="./figure">
+								<imagecontainers>
+									<xsl:for-each select="./figure">
+										<xsl:variable name="plats" select="position()"/>
+										<xsl:variable name="bildref"><xsl:value-of select="img/@data-assoc-ref"/></xsl:variable>
+										<imagecontainer refType="ImageContainer">
+											<name><xsl:value-of select="concat('Bild ',$plats)"/></name>
+											<sortkey>
+												<xsl:value-of select="position() * 0.25"/>
+											</sortkey>
+											<data> 
+												<npdoc xmlns="http://www.infomaker.se/npdoc/2.1" version="2.1" xml:lang="sv">
+													<caption>
+														<p><xsl:value-of select="./figcaption"/></p>
+													</caption>
+												</npdoc>
+											</data>
+											<xsl:if test="./div[@class = 'byline']">
+												<xsl:variable name="fornamn">
+													<xsl:value-of select="substring-before(./div[@class = 'byline'],' ')"/>
+												</xsl:variable>
+												<xsl:variable name="efternamn">
+													<xsl:choose>
+														<xsl:when test="contains(./div[@class = 'byline'],'/')"><xsl:value-of select="substring-after(substring-before(./div[@class = 'byline'],'/'),' ')"/></xsl:when>
+														<xsl:otherwise><xsl:value-of select="substring-after(./div[@class = 'byline'],' ')"/></xsl:otherwise>
+													</xsl:choose>
+												</xsl:variable>
+												<byline refType="Byline">
+													<byline_type_id>Byline</byline_type_id>   
+													<userinfo>
+														<userdata>
+															<titleinfo></titleinfo>
+															<lastname><xsl:value-of select="$efternamn"/></lastname>
+															<firstname><xsl:value-of select="$fornamn"/></firstname>
+														</userdata>
+													</userinfo>
+												</byline>
+												
+											</xsl:if>
+											<xsl:variable name="bildnr" select="$bildref"/> <!-- Från 3/10 ska bildnumret som finns här vara med intakt i bildnamnet -->
+											<xsl:variable name="bildnamnet" select="concat($renuri,'-',$bildnr,'nh.jpg')"/> <!-- Sätt ihop en referens till vad bildfilen heter -->
+											<image refType="Image">
+												<name><xsl:value-of select="$bildnamnet"/></name>
+												<data src="{$bildnamnet}"/>
+											</image>
+										</imagecontainer>
+									</xsl:for-each>
+									
+								</imagecontainers>
+							</xsl:if>
 							
 							
 						</articlepart>
@@ -407,9 +468,25 @@
 		<xsl:element name="p" namespace="{$npdoc_ns}"><xsl:text>&#x2013; </xsl:text><xsl:value-of select="normalize-space(.)"/></xsl:element>
 	</xsl:template>
 	
+	<xsl:template match="span"></xsl:template>
 	
 	<xsl:template match="div[@class = 'bodytext']"><xsl:apply-templates/></xsl:template>
 	
+	<xsl:template match="div[@class = 'result-epa']">
+		<xsl:element name="p" namespace="{$npdoc_ns}"><xsl:value-of select="./span[@class = 'result-hlag']"/>-<xsl:value-of select="./span[@class = 'result-blag']"/><xsl:text>&#9;</xsl:text><xsl:value-of select="./span[@class = 'result-hres']"/>-<xsl:value-of select="./span[@class = 'result-bres']"/>
+			<xsl:text>&#9;</xsl:text><xsl:value-of select="./p[@class = 'result-epa-period']"/>
+		</xsl:element>
+		<xsl:apply-templates/>
+	</xsl:template>
+	
+	<xsl:template match="div[@class = 'result-tab']">
+		<xsl:apply-templates select="table"/>
+	</xsl:template>
+	
+	<xsl:template match="p[@class = 'result-epa-text']"><xsl:apply-templates/></xsl:template>
+
+       <xsl:template match="p[@class = 'result-epa-period']"></xsl:template>
+
 	<xsl:template match="p">
 		<xsl:element name="p" namespace="{$npdoc_ns}"><xsl:value-of select="normalize-space(.)"/></xsl:element>
 	</xsl:template>
@@ -435,11 +512,26 @@
 		<xsl:element name="p" namespace="{$npdoc_ns}"><xsl:value-of select="normalize-space(div[@class = 'byline'])"/></xsl:element>
 		<xsl:element name="p" namespace="{$npdoc_ns}"><xsl:element name="a" namespace="{$npdoc_ns}"><xsl:attribute name="href"><xsl:value-of select="normalize-space(img/@src)"/></xsl:attribute><xsl:value-of select="normalize-space(img/@src)"/></xsl:element></xsl:element>
 	</xsl:template>
+
+	<xsl:template match="table[@class = 'serietab']">
+		<xsl:apply-templates select="caption"/>
+		<xsl:apply-templates select="tbody"/>	
+	</xsl:template>
 	
+	<xsl:template match="caption[@class = 'tabrub']">
+		<xsl:element name="subheadline1" namespace="{$npdoc_ns}"><xsl:value-of select="normalize-space(.)"/></xsl:element>
+	</xsl:template>
+	
+	<xsl:template match="tbody">
+		<xsl:choose>
+			<xsl:when test="tr[1]/@class = 'splinje'"><xsl:element name="subheadline1" namespace="{$npdoc_ns}">&#9;-----------------------------------------</xsl:element></xsl:when>
+			<xsl:otherwise><xsl:for-each select="tr"><xsl:element name="subheadline4" namespace="{$npdoc_ns}"><xsl:attribute name="customName">Tabell</xsl:attribute><xsl:for-each select="td"><xsl:if test=". != ''"><xsl:text>&#9;</xsl:text><xsl:value-of select="."/></xsl:if></xsl:for-each></xsl:element></xsl:for-each></xsl:otherwise>
+		</xsl:choose>
+		
+	</xsl:template>
+
 	<xsl:template match="table">
-		
 		<xsl:for-each select="tr"><xsl:element name="subheadline4" namespace="{$npdoc_ns}"><xsl:attribute name="customName">Tabell</xsl:attribute></xsl:element><xsl:for-each select="td"><xsl:if test=". != ''"><xsl:text>&#9;</xsl:text><xsl:value-of select="."/></xsl:if></xsl:for-each></xsl:for-each>
-		
 	</xsl:template>
 	
 	<xsl:template match="ul">
